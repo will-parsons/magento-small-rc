@@ -1,0 +1,151 @@
+heat_template_version: 2015-10-15
+
+description: |
+ #### Magento, Secondary
+
+parameter_groups:
+
+parameters:
+  server_name:
+    type: string
+    default: example-0
+  server_flavor:
+    type: string
+    default: 4 GB General Purpose v1
+    constraints:
+    - allowed_values:
+      - 2 GB General Purpose v1
+      - 4 GB General Purpose v1
+      - 8 GB General Purpose v1
+  server_image:
+    type: string
+    default: f4bbbce2-50b0-4b07-bf09-96c175a45f4b
+    constraints:
+    - allowed_values:
+      - f4bbbce2-50b0-4b07-bf09-96c175a45f4b
+  ssh_key:
+    type: string
+    label: SSH Key
+    description: SSH Key for Magento Slave Nodes
+  parent_stack_id:
+    type: string
+    default: None
+  apache_default_domain:
+    type: string
+    default: exmaple.com
+  rc_network_name:
+    type: string
+    label: RackConnect Network
+    description: Name or UUID of RackConnected network to attach this server to
+    constraints:
+    - custom_constraint: rackconnect.network
+
+resources:
+  upload_role_config:
+    type: OS::Heat::SoftwareConfig
+    properties:
+      group: script
+      outputs:
+      - name: results
+      config: |
+        #!/bin/bash
+        set -e
+        git clone -b 'stable' --single-branch --progress https://github.com/rackspace-orchestration-templates/ansible-roles.git /etc/ansible/roles
+  magento_config:
+    type: OS::Heat::SoftwareConfig
+    properties:
+      group: ansible
+      config: |
+        ---
+        - name: Install and configure Magento
+          hosts: localhost
+          connection: local
+          roles:
+          - common
+          - nginx
+          - redis
+          - memcache
+          - php-fpm
+          - magento-ce
+          - firewall
+  deploy_roles:
+    type: OS::Heat::SoftwareDeployment
+    properties:
+      signal_transport: TEMP_URL_SIGNAL
+      config:
+        get_resource: upload_role_config
+      server:
+        get_resource: magento_server
+  deploy_magento:
+    type: OS::Heat::SoftwareDeployment
+    depends_on: deploy_roles
+    properties:
+      signal_transport: TEMP_URL_SIGNAL
+      input_values:
+        tz: "America/Chicago"
+        redis_instances:
+        - { name: 'fpc', port: '6381', persistent: 'FALSE', maxmemory: '1gb' }
+        - { name: 'obj', port: '6379', persistent: 'FALSE', maxmemory: '1gb' }
+        - { name: 'ses', port: '6380', persistent: 'TRUE', maxmemory: '1gb' }
+        magento_install: false
+        magento_create_db: false
+        firewall_global_rules: [ "0.0.0.0,0,22,tcp", "0.0.0.0,0,80,tcp", "0.0.0.0,0,443,tcp"]
+      config:
+        get_resource: magento_config
+      server:
+        get_resource: magento_server
+  magento_server:
+    type: OS::Nova::Server
+    properties:
+      name: { get_param: server_name }
+      key_name: { get_param: ssh_key }
+      image: { get_param: server_image }
+      flavor: { get_param: server_flavor }
+      software_config_transport: POLL_TEMP_URL
+      config_drive: true
+      user_data_format: SOFTWARE_CONFIG
+      networks:
+      - network: { get_param: rc_network_name }
+      - uuid: 11111111-1111-1111-1111-111111111111
+      metadata:
+        rax-heat: { get_param: "parent_stack_id" }
+        build_config: "monitoring_defaults"
+  magento_server_http_check:
+    type: Rackspace::CloudMonitoring::Check
+    depends_on: deploy_magento
+    properties:
+      entity: { get_resource: magento_server }
+      type: remote.http
+      label:
+        str_replace:
+          template: stack Node HTTP Check
+          params:
+            stack: { get_param: "OS::stack_name" }
+      details:
+        url:
+          str_replace:
+            template: "http://ipaddr"
+            params:
+              ipaddr: { get_attr: [magento_server, accessIPv4] }
+      metadata:
+        rax-heat: { get_param: "OS::stack_id" }
+        stack-name: { get_param: "OS::stack_name" }
+      period: 120
+      timeout: 10
+      monitoring_zones_poll:
+      - Northern Virginia (IAD)
+      - Chicago (ORD)
+      - Dallas Fort Worth (DFW)
+      - London (LON)
+      target_hostname: { get_attr: [magento_server, accessIPv4] }
+      target_receiver: IPv4
+
+outputs:
+  public_ip:
+    description: Server Public IP
+    value:
+      get_attr: [magento_server, networks, { get_param: rc_network_name }, 0]
+  private_ip:
+    description: Server Private IP
+    value:
+      get_attr: [magento_server, networks, private, 0]
