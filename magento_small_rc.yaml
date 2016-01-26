@@ -27,8 +27,8 @@ parameter_groups:
   - magento_lname
   - magento_eula
 - label: RackConnect Settings
-    parameters:
-    - rc_network_name
+  parameters:
+  - rc_network_name
 
 parameters:
   #Magento Customization
@@ -311,7 +311,7 @@ resources:
   #Monitoring Checks
   load_balancer_http_check:
     type: Rackspace::CloudMonitoring::Check
-    depends_on: load_balancer
+    depends_on: load_balancer_public_ip
     properties:
       entity: { get_resource: load_balancer }
       type: remote.http
@@ -378,6 +378,7 @@ resources:
           server_image: f4bbbce2-50b0-4b07-bf09-96c175a45f4b
           server_flavor: { get_param: server_flavor }
           apache_default_domain: { get_param: magento_url }
+          rc_network_name: { get_param: rc_network_name }
           server_name:
             str_replace:
               template: stack-secondary-%index%
@@ -408,7 +409,7 @@ resources:
     properties:
       signal_transport: TEMP_URL_SIGNAL
       input_values:
-        nginx_vhost_str: { get_param: lamp_url }
+        nginx_vhost_str: { get_param: magento_url }
         nginx_vhost_template: "loadbalancer"
         nginx_upstream_server: { get_attr: [magento_server, networks, { get_param: rc_network_name}, 0] }
         nginx_lb_nodes: { get_attr: [magento_secondary, public_ip] }

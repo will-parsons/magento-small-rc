@@ -1,4 +1,4 @@
-[![Circle CI](https://circleci.com/gh/rackspace-orchestration-templates/magento-small/tree/master.png?style=shield)](https://circleci.com/gh/rackspace-orchestration-templates/magento-small)
+[![Circle CI](https://circleci.com/gh/rackspace-orchestration-templates/magento-small-rc/tree/master.png?style=shield)](https://circleci.com/gh/rackspace-orchestration-templates/magento-small)
 #### Small Magento Site
 
   A Single Linux server with
