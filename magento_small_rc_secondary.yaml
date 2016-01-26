@@ -39,7 +39,9 @@ parameters:
     description: Name or UUID of RackConnected network to attach this server to
     constraints:
     - custom_constraint: rackconnect.network
-
+  master_server:
+    type: string
+    
 resources:
   upload_role_config:
     type: OS::Heat::SoftwareConfig
@@ -66,7 +68,6 @@ resources:
           - redis
           - memcache
           - php-fpm
-          - magento-ce
           - firewall
   deploy_roles:
     type: OS::Heat::SoftwareDeployment
@@ -87,8 +88,9 @@ resources:
         - { name: 'fpc', port: '6381', persistent: 'FALSE', maxmemory: '1gb' }
         - { name: 'obj', port: '6379', persistent: 'FALSE', maxmemory: '1gb' }
         - { name: 'ses', port: '6380', persistent: 'TRUE', maxmemory: '1gb' }
-        magento_install: false
-        magento_create_db: false
+        nginx_vhost_template: "magento_secondary"
+        nginx_upstream_server: { get_param: master_server }
+        nginx_vhost_str: { get_param: apache_default_domain }
         firewall_global_rules: [ "0.0.0.0,0,22,tcp", "0.0.0.0,0,80,tcp", "0.0.0.0,0,443,tcp"]
       config:
         get_resource: magento_config

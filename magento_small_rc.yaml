@@ -379,6 +379,7 @@ resources:
           server_flavor: { get_param: server_flavor }
           apache_default_domain: { get_param: magento_url }
           rc_network_name: { get_param: rc_network_name }
+          master_server: { get_attr: [ magento_server, networks, { get_param: rc_network_name }, 0] }
           server_name:
             str_replace:
               template: stack-secondary-%index%
