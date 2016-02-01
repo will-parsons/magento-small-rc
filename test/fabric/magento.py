@@ -49,3 +49,4 @@ def check():
 def artifacts():
     env.platform_family = detect.detect()
     get_artifacts()
+
