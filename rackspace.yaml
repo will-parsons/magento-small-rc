@@ -2,9 +2,10 @@ schema-version: 1.0.0
 application-family: eCommerce
 application-name: Magento
 application-version: 1.9.2.0
-flavor: Production
+flavor: Production - RCv3
 flavor-weight: 2
 popularity: 4
+rackconnect: true
 reach-info:
   tattoo: https://0b5294b243620310a700-e388a7f3aba385a925111b1fc6f680d4.ssl.cf2.rackcdn.com/magento-tattoo.png
   icon-20x20: https://0b5294b243620310a700-e388a7f3aba385a925111b1fc6f680d4.ssl.cf2.rackcdn.com/magento-icon-20x20.png
@@ -129,7 +130,7 @@ description: |
   servers).  It also includes Cloud Monitoring and Cloud
   Backups.
 
-  This stack is running 
+  This stack is running
   [Magento 1.9.2.0 Community Edition](http://www.magentocommerce.com/product/community-edition/),
   [nginx](http://nginx.org/en/),
   and [PHP FPM](http://php-fpm.org/about/).
