@@ -1,7 +1,7 @@
 schema-version: 1.0.0
 application-family: eCommerce
 application-name: Magento
-application-version: 1.9.2.0
+application-version: 1.9.x
 flavor: Production - RCv3
 flavor-weight: 2
 popularity: 4
@@ -40,11 +40,15 @@ instructions: |
   to point your domain to the IP of this Cloud Server. Once you've done this,
   restart your browser and navigate to the site. The backend can be accessed using the
   "Magento Admin URL" listed in Stack Details, and you can login with the credentials
-  provided in the "Credentials" section of Stack Details..
+  provided in the "Credentials" section of Stack Details.
 
   #### Logging in via SSH
+  To update or upload code, you can log in as the 'magento' user via SSH or SFTP into the 'httpdocs' folder. 
+  The password is provided n the "Credentials" section of Stack Details.
+  
   The private key provided in the passwords section can be used to login as
-  root via SSH. We have an article on how to use these keys with [Mac OS X and
+  root via SSH, which should be used for configuration changes only. 
+  We have an article on how to use these keys with [Mac OS X and
   Linux](http://www.rackspace.com/knowledge_center/article/logging-in-with-a-ssh-private-key-on-linuxmac)
   as well as [Windows using
   PuTTY](http://www.rackspace.com/knowledge_center/article/logging-in-with-a-ssh-private-key-on-windows).
@@ -74,12 +78,7 @@ instructions: |
   are configured: two for data caching and one for session persistence. You can
   find the configuration of these caches in /etc/redis/.
 
-  [Lsyncd](https://github.com/axkibe/lsyncd) has been installed in order to
-  sync static content from the Master server to all secondary servers.
-  When uploading content, it only needs to be uploaded to the Master node,
-  and will be automatically synchronized to all secondary nodes.
-
-  MySQL is being hosted on a Cloud Database instance, running MySQL 5.6.
+  MySQL is being hosted on a Cloud Database instance.
   Backups for MySQL are provided by [Holland](http://wiki.hollandbackup.org/),
   which is running on the Master server.
 
@@ -93,10 +92,31 @@ instructions: |
   to the Cloud Database via the MySQL client.  For more assistance, please
   contact your Support team.
 
-  Monitoring is configured to verify that Apache is running on both the Master
+  Monitoring is configured to verify that Nginx is running on both the Master
   and all secondary servers, as well as that the Cloud Load Balancer is
   functioning.  Additionally, the default CPU, RAM, and Filesystem checks
   are in place on all servers.
+  
+  ### Notes for multi-server deployments
+  [Lsyncd](https://github.com/axkibe/lsyncd) has been installed in order to
+  sync static content from the Master server to all secondary servers.
+  When uploading content, it only needs to be uploaded to the Master node,
+  and will be automatically synchronized to all secondary nodes.
+  
+  You will need to make sure your Magento Dashboard is served only from the
+  Master server, so that image uploads will be synchronsed to the secondary
+  servers with Lsyncd.  
+  1. First, create a DNS subdomain such as "admin.example.com" which should point at the public IP of the Master server. 
+  2. Then, log into the Magento dashboard and go to System > Configuration > Admin
+  3. Under "Admin base URL", select "Use Custom Admin URL" = Yes, and enter http://admin.example.com/ 
+  4. Be sure to include the trailing slash, changing 
+  5. If you wish to use SSL for the Magento dashboard (recommended), please ensure your SSL certificate is installed on the Master server, and Nginx is configured to use it on port 443, _before_ you change the Admin URL to an https:// URL.  
+   
+  ### SSL Certificates
+  Using SSL is highly recommended. You can enable SSL by uploading your certificate
+  to the Cloud Load Balancer, which is configurable under Network -> Cloud Load Balancers. 
+  Once it is set up, you can set your Frontend and Admin use https:// base URLs. 
+  Please call Support for further guidance, or if your actions lead to broken or looping redirects. 
 
   #### Magento Plugins
   There are thousands of plugins that have been developed for Magento by the
@@ -117,9 +137,10 @@ instructions: |
   parameters, as this will result in the loss of all data within the
   database.
 
-  This stack will not ensure that Magento or the servers themselves are
-  up-to-date.  You are responsible for ensuring that all software is
-  updated.
+  ## Important security notes
+  The Magento code provided here is the latest at time of deployment, but Magento does *not* auto-update. 
+  You, or your development team, are responsible for applying any and all future Magento security patches to keep your site secure. 
+  For awareness, we would highly recommend signing up to recieve security alerts at https://magento.com/security
 
 user-input-required: true
 description: |
@@ -130,8 +151,8 @@ description: |
   servers).  It also includes Cloud Monitoring and Cloud
   Backups.
 
-  This stack is running
-  [Magento 1.9.2.0 Community Edition](http://www.magentocommerce.com/product/community-edition/),
+  This stack is running the latest 
+  [Magento 1.9.x Community Edition](http://www.magentocommerce.com/product/community-edition/),
   [nginx](http://nginx.org/en/),
   and [PHP FPM](http://php-fpm.org/about/).
   with a Cloud Database running
